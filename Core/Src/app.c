@@ -31,45 +31,48 @@ st_bg96_config bg96_config={.send_data_device=NULL,
                                           .tcp_username=""},
                               .self_mqtt={.identifier_socket_mqtt=0,
                                           .quality_service=0,
-                                          .host_name="\"industrial.api.ubidots.com\"",
+                                          .host_name="\"industrial.api.ubidots.com\"",//industrial.api.ubidots.com
                                           .port=1883,
                                           .mqtt_client_id="123456789",
-                                          .mqtt_username="",
-                                          .mqtt_password=""}};
+                                          .mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL",
+                                          .mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL"}};
 uint8_t rx_tem[20];
 uint8_t rx_buffer[300];
 uint8_t rx_index=0;
 
 char topic[]="/v1.6/devices/monitoreo_iot";
-char data[]="{\"bateria\":10,\"humedad\":60},\"humedad_ambiente\":60},\"radiacion\":60},\"temperatura_ambiente\":60}";
+//{"temperatura_ambiente":10,"bateria":80,"radiacion":10,"humedad":80,"humedad":70,"humedad_ambiente":10}
+char data[]="{\"bateria\":10,\"humedad\":60,\"humedad_ambiente\":60,\"radiacion\":10,\"temperatura_ambiente\":10}";
 
 
 em_bg96_error_handling write_data(char *command, char *request, char *buffer, uint32_t time)
 {
+	HAL_UART_Transmit(&huart1, (const uint8_t*)command, strlen(command),50);
 	HAL_UART_Transmit(&huart2, (const uint8_t*)command, strlen(command),50);
-	HAL_UART_Receive_IT(&huart2,rx_tem,1);
+	HAL_UART_Receive_IT(&huart1,rx_tem,1);
 	for (uint32_t i = 0; i < time; ++i)
 	{
 		vTaskDelay(1);
 
 		if (strstr((char*)rx_buffer, request) != NULL)
 		{
+			HAL_UART_Transmit(&huart2, rx_buffer,strlen((const char *)rx_buffer),100);
 			memset((char*)rx_buffer, 0, sizeof(rx_buffer));
 			rx_index=0;
 			return FT_BG96_OK;
 		}
 	}
-	HAL_UART_AbortReceive_IT(&huart2);
+	HAL_UART_AbortReceive_IT(&huart1);
 	return FT_BG96_TIMEOUT;
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if (huart==&huart2)
+	if (huart==&huart1)
 	{
 		rx_buffer[rx_index]=rx_tem[0];
 		rx_index++;
-		HAL_UART_Receive_IT(&huart2,rx_tem,1);
+		HAL_UART_Receive_IT(&huart1,rx_tem,1);
 	}
 }
 
@@ -104,7 +107,7 @@ static void raise_server(void *p_parameter)
 
 						}
 					}
-
+					desactivate_context_pdp(&bg96_config);
 				}
 			}
 		}
