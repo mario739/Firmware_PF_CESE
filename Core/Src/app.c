@@ -19,6 +19,9 @@ extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 
 xQueueHandle queue_data;
+xQueueHandle queue_trama;
+
+
 aht10_config_t aht_config;
 
 st_bg96_config bg96_config={.send_data_device=NULL,
@@ -43,6 +46,14 @@ uint8_t rx_index=0;
 char topic[]="/v1.6/devices/monitoreo_iot";
 //{"temperatura_ambiente":10,"bateria":80,"radiacion":10,"humedad":80,"humedad":70,"humedad_ambiente":10}
 char data[]="{\"bateria\":10,\"humedad\":60,\"humedad_ambiente\":60,\"radiacion\":10,\"temperatura_ambiente\":10}";
+
+struct st_data_sensors{
+	uint8_t ambient_humidity;
+	int8_t ambient_temperature;
+	uint8_t batery;
+	uint8_t radiacion;
+	uint8_t soil_moisture;
+};
 
 
 em_bg96_error_handling write_data(char *command, char *request, char *buffer, uint32_t time)
@@ -76,22 +87,37 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
-static void data_acquisition(void *p_parameter)
+static void task_data_acquisition(void *p_parameter)
 {
-	uint8_t humedity=0;
-	int8_t temperature=0;
 
+	struct st_data_sensors data_sensors;
 	while (1)
 	{
-		aht10_get_humedity(&aht_config, &humedity);
-		aht10_get_temperature(&aht_config, &temperature);
-		vTaskDelay(100);
+		aht10_get_humedity(&aht_config,&data_sensors.ambient_humidity);
+		aht10_get_temperature(&aht_config,&data_sensors.ambient_temperature);
+		xQueueSend(queue_data,&data_sensors,portMAX_DELAY);
+		vTaskDelay(20);
 	}
 }
 
-
-static void raise_server(void *p_parameter)
+static void task_data_concatenate(void *p_parameter)
 {
+	struct st_data_sensors data_sensors2;
+	static char data2[150];
+	while(1)
+	{
+		xQueueReceive(queue_data, &data_sensors2,portMAX_DELAY);
+		sprintf(data2,"\"bateria\":%u,\"humedad\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u}",data_sensors2.batery,
+				data_sensors2.soil_moisture,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
+		//xQueueSend(queue_trama,data2,200);
+		vTaskDelay(20);
+	}
+}
+
+static void task_raise_server(void *p_parameter)
+{
+	static char* data2;
+
 	while(1)
 	{
 		if (get_status_modem(&bg96_config)==FT_BG96_OK)
@@ -102,7 +128,8 @@ static void raise_server(void *p_parameter)
 				{
 					if (activate_context_pdp(&bg96_config)==FT_BG96_OK)
 					{
-						if (send_data_mqtt(&bg96_config,topic,data)==FT_BG96_OK)
+						//xQueueReceive(queue_trama,&data2,300);
+						if (send_data_mqtt(&bg96_config,topic,data2)==FT_BG96_OK)
 						{
 
 						}
@@ -123,12 +150,15 @@ int app(void)
     aht10Init(&aht_config, write_I2C_STM32L432_port, read_I2C_STM32L432_port, delay_STM32L432_port);
     init_driver(&bg96_config,write_data);
 
-	res = xTaskCreate(data_acquisition, (const char*)"task_data_acquisition", configMINIMAL_STACK_SIZE * 2, NULL,tskIDLE_PRIORITY + 1, NULL);
+	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", configMINIMAL_STACK_SIZE * 2, NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
-	res=xTaskCreate(raise_server, (const char*)"task_raise_server", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL);
+	res=xTaskCreate(task_raise_server, (const char*)"task_raise_server", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 2, NULL);
+	configASSERT(res == pdPASS);
+	res=xTaskCreate(task_data_concatenate, (const char*)"task_data_concatenate", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
 
-	queue_data=xQueueCreate(20, sizeof(uint8_t));
+	queue_data=xQueueCreate(4, sizeof(struct st_data_sensors));
+	queue_trama=xQueueCreate(4, sizeof(char *));
 
 	osKernelStart();
 

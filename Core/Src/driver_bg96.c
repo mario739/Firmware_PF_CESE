@@ -250,7 +250,7 @@ em_bg96_error_handling set_parameters_mqtt(st_bg96_config *self)
 em_bg96_error_handling open_client_mqtt(st_bg96_config *self)
 {
     em_bg96_error_handling ft_resp=FT_BG96_ERROR;
-    char buffer_resp[30]={0}; 
+    char buffer_resp[150]={0};
     char cmd[50];
     sprintf(cmd,"AT+QMTOPEN=%u,%s,%u\r",self->self_mqtt.identifier_socket_mqtt,self->self_mqtt.host_name,self->self_mqtt.port);
     ft_resp=self->send_data_device(cmd,RS_BG96_CERO,buffer_resp,75000);
@@ -263,7 +263,7 @@ em_bg96_error_handling open_client_mqtt(st_bg96_config *self)
 em_bg96_error_handling close_client_mqtt(st_bg96_config *self)
 {
     em_bg96_error_handling ft_resp=FT_BG96_ERROR;
-    char buffer_resp[30]={0}; 
+    char buffer_resp[50]={0};
     char cmd[50];
     sprintf(cmd,"AT+QMTCLOSE=%u\r",self->self_mqtt.identifier_socket_mqtt);
     ft_resp=self->send_data_device(cmd,RS_BG96_CERO,buffer_resp,300);
@@ -338,10 +338,6 @@ em_bg96_error_handling turn_off_bg96(st_bg96_config *self)
 
 }
 
-em_bg96_error_handling raisen_mqtt_server(st_bg96_config *self)
-{
-    
-}
 em_bg96_error_handling send_data_mqtt(st_bg96_config *self,char *topic,char *data)
 {
     em_bg96_error_handling ft_resp=FT_BG96_OK;
