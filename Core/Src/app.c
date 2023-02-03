@@ -36,12 +36,12 @@ st_bg96_config bg96_config={.send_data_device=NULL,
                                           .quality_service=0,
                                           .host_name="\"industrial.api.ubidots.com\"",//industrial.api.ubidots.com
                                           .port=1883,
-                                          .mqtt_client_id="123456789",
+                                          .mqtt_client_id="123a56789",
                                           .mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL",
                                           .mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL"}};
-uint8_t rx_tem[20];
+uint8_t  rx_tem;
 uint8_t rx_buffer[300];
-uint8_t rx_index=0;
+uint16_t rx_index=0;
 
 char topic[]="/v1.6/devices/monitoreo_iot";
 //{"temperatura_ambiente":10,"bateria":80,"radiacion":10,"humedad":80,"humedad":70,"humedad_ambiente":10}
@@ -56,24 +56,29 @@ struct st_data_sensors{
 };
 
 
-em_bg96_error_handling write_data(char *command, char *request, char *buffer, uint32_t time)
+static em_bg96_error_handling write_data(char *command, char *request, char *buffer, uint32_t time)
 {
 	HAL_UART_Transmit(&huart1, (const uint8_t*)command, strlen(command),50);
 	HAL_UART_Transmit(&huart2, (const uint8_t*)command, strlen(command),50);
-	HAL_UART_Receive_IT(&huart1,rx_tem,1);
-	for (uint32_t i = 0; i < time; ++i)
+	HAL_UART_Receive_IT(&huart1,&rx_tem,1);
+	char* res;
+	uint32_t i;
+	for (i = 0; i < time; ++i)
 	{
 		vTaskDelay(1);
-
-		if (strstr((char*)rx_buffer, request) != NULL)
+		res=strstr((char*)rx_buffer,request);
+		if (res!= NULL)
 		{
-			HAL_UART_Transmit(&huart2, rx_buffer,strlen((const char *)rx_buffer),100);
+			HAL_UART_Transmit(&huart2, rx_buffer,strlen((const char *)rx_buffer),200);
 			memset((char*)rx_buffer, 0, sizeof(rx_buffer));
 			rx_index=0;
 			return FT_BG96_OK;
 		}
 	}
-	HAL_UART_AbortReceive_IT(&huart1);
+
+	rx_index=0;
+	HAL_UART_Transmit(&huart2, rx_buffer,strlen((const char *)rx_buffer),200);
+	memset((char*)rx_buffer, 0, sizeof(rx_buffer));
 	return FT_BG96_TIMEOUT;
 }
 
@@ -81,9 +86,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if (huart==&huart1)
 	{
-		rx_buffer[rx_index]=rx_tem[0];
+		rx_buffer[rx_index]=(char)rx_tem;
 		rx_index++;
-		HAL_UART_Receive_IT(&huart1,rx_tem,1);
+		rx_tem=0;
+		HAL_UART_Receive_IT(&huart1,&rx_tem,1);
 	}
 }
 
@@ -99,7 +105,7 @@ static void task_data_acquisition(void *p_parameter)
 		vTaskDelay(20);
 	}
 }
-
+/*
 static void task_data_concatenate(void *p_parameter)
 {
 	struct st_data_sensors data_sensors2;
@@ -108,15 +114,14 @@ static void task_data_concatenate(void *p_parameter)
 	{
 		xQueueReceive(queue_data, &data_sensors2,portMAX_DELAY);
 		sprintf(data2,"\"bateria\":%u,\"humedad\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u}",data_sensors2.batery,
-				data_sensors2.soil_moisture,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
-		//xQueueSend(queue_trama,data2,200);
+		data_sensors2.soil_moisture,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
+		xQueueSend(queue_trama,data2,200);
 		vTaskDelay(20);
 	}
-}
+}*/
 
 static void task_raise_server(void *p_parameter)
 {
-	static char* data2;
 
 	while(1)
 	{
@@ -129,7 +134,7 @@ static void task_raise_server(void *p_parameter)
 					if (activate_context_pdp(&bg96_config)==FT_BG96_OK)
 					{
 						//xQueueReceive(queue_trama,&data2,300);
-						if (send_data_mqtt(&bg96_config,topic,data2)==FT_BG96_OK)
+						if (send_data_mqtt(&bg96_config,topic,data)==FT_BG96_OK)
 						{
 
 						}
@@ -139,7 +144,7 @@ static void task_raise_server(void *p_parameter)
 			}
 		}
 
-		vTaskDelay(200);
+		vTaskDelay(100);
 	}
 }
 
@@ -149,16 +154,18 @@ int app(void)
 	BaseType_t res;
     aht10Init(&aht_config, write_I2C_STM32L432_port, read_I2C_STM32L432_port, delay_STM32L432_port);
     init_driver(&bg96_config,write_data);
+	res=xTaskCreate(task_raise_server, (const char*)"task_raise_server", configMINIMAL_STACK_SIZE*3 , NULL, tskIDLE_PRIORITY + 2, NULL);
+	configASSERT(res == pdPASS);
 
-	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", configMINIMAL_STACK_SIZE * 2, NULL,tskIDLE_PRIORITY + 1, NULL);
+	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", configMINIMAL_STACK_SIZE , NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
-	res=xTaskCreate(task_raise_server, (const char*)"task_raise_server", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 2, NULL);
-	configASSERT(res == pdPASS);
+	/*
 	res=xTaskCreate(task_data_concatenate, (const char*)"task_data_concatenate", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-	configASSERT(res == pdPASS);
+	configASSERT(res == pdPASS);*/
 
 	queue_data=xQueueCreate(4, sizeof(struct st_data_sensors));
 	queue_trama=xQueueCreate(4, sizeof(char *));
+
 
 	osKernelStart();
 
