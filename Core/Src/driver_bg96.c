@@ -350,7 +350,7 @@ em_bg96_error_handling send_data_mqtt(st_bg96_config *self,char *topic,char *dat
         case OPEN_CONNECTION_MQTT:
             if (open_client_mqtt(self)==FT_BG96_OK)
                 states_send_data_mqtt=CONNECT_BROKER_MQTT;
-            else states_send_data_mqtt=CLOSE_BROKEN_MQTT;
+            else states_send_data_mqtt=DISCONNECT_BROKER_MQTT;
             break;
         case CONNECT_BROKER_MQTT:
             if (connect_server_mqtt(self)==FT_BG96_OK)
@@ -370,7 +370,7 @@ em_bg96_error_handling send_data_mqtt(st_bg96_config *self,char *topic,char *dat
             {
             	 states_send_data_mqtt=ERROR1;
             }
-            else states_send_data_mqtt=ERROR1;
+            else states_send_data_mqtt=DISCONNECT_BROKER_MQTT;
             break;
         case ERROR1:
             flag_machine=0;

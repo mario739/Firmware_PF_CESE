@@ -34,7 +34,7 @@ st_bg96_config bg96_config={.send_data_device=NULL,
                                           .tcp_username=""},
                               .self_mqtt={.identifier_socket_mqtt=0,
                                           .quality_service=0,
-                                          .host_name="\"industrial.api.ubidots.com\"",//industrial.api.ubidots.com
+                                          .host_name="\"industrial.api.ubidots.com\"",
                                           .port=1883,
                                           .mqtt_client_id="123a56789",
                                           .mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL",
@@ -44,7 +44,6 @@ uint8_t rx_buffer[300];
 uint16_t rx_index=0;
 
 char topic[]="/v1.6/devices/monitoreo_iot";
-//{"temperatura_ambiente":10,"bateria":80,"radiacion":10,"humedad":80,"humedad":70,"humedad_ambiente":10}
 char data[]="{\"bateria\":10,\"humedad\":60,\"humedad_ambiente\":60,\"radiacion\":10,\"temperatura_ambiente\":10}";
 
 struct st_data_sensors{
@@ -96,13 +95,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 static void task_data_acquisition(void *p_parameter)
 {
 
-	struct st_data_sensors data_sensors;
+	struct st_data_sensors data_sensors={.ambient_humidity=20,.ambient_temperature=20,.batery=30,.radiacion=10,.soil_moisture=20};
 	while (1)
 	{
 		aht10_get_humedity(&aht_config,&data_sensors.ambient_humidity);
 		aht10_get_temperature(&aht_config,&data_sensors.ambient_temperature);
 		xQueueSend(queue_data,&data_sensors,portMAX_DELAY);
-		vTaskDelay(20);
 	}
 }
 /*
@@ -122,7 +120,8 @@ static void task_data_concatenate(void *p_parameter)
 
 static void task_raise_server(void *p_parameter)
 {
-
+	struct st_data_sensors data_sensors2;
+	char data2[200];
 	while(1)
 	{
 		if (get_status_modem(&bg96_config)==FT_BG96_OK)
@@ -133,8 +132,10 @@ static void task_raise_server(void *p_parameter)
 				{
 					if (activate_context_pdp(&bg96_config)==FT_BG96_OK)
 					{
-						//xQueueReceive(queue_trama,&data2,300);
-						if (send_data_mqtt(&bg96_config,topic,data)==FT_BG96_OK)
+						xQueueReceive(queue_data,&data_sensors2,300);
+						sprintf(data2,"\"bateria\":%u,\"humedad\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u}",data_sensors2.batery,
+						data_sensors2.soil_moisture,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
+						if (send_data_mqtt(&bg96_config,topic,data2)==FT_BG96_OK)
 						{
 
 						}
@@ -163,7 +164,7 @@ int app(void)
 	res=xTaskCreate(task_data_concatenate, (const char*)"task_data_concatenate", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);*/
 
-	queue_data=xQueueCreate(4, sizeof(struct st_data_sensors));
+	queue_data=xQueueCreate(1, sizeof(struct st_data_sensors));
 	queue_trama=xQueueCreate(4, sizeof(char *));
 
 
