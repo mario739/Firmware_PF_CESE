@@ -26,6 +26,16 @@ extern st_bg96_config bg96_config;
 
 
 
+enum en_raise_server
+{
+	STATUS_MODEM,
+	STATUS_SIM,
+	SET_PARAMETER_CONTEXT_TCP,
+	ACTIVATE_CONTEXT_PDP,
+	SEND_DATA_MQTT,
+	DESACTIVATE_MQTT,
+	SEND_ERROR,
+};
 
 struct st_config_mqtt_server
 {
