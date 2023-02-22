@@ -18,11 +18,11 @@ extern uint8_t data_debug;
 
 void task_debug(void *p_parameter)
 {
+	static uint8_t *data_debug_2;
 	while(1)
 	{
-//		xQueueReceive(queue_debug,(void*)&data_debug_2,portMAX_DELAY);
-		//HAL_UART_Transmit(&huart2,&data_debug_2, strlen(&data_debug_2),50);
-		//memset(data_debug_2,0,200);
+		xQueueReceive(queue_debug,(void*)&data_debug_2,portMAX_DELAY);
+		HAL_UART_Transmit(&huart2,(const char *)data_debug_2, strlen(data_debug_2),50);
 	}
 
 

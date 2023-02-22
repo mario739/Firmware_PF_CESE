@@ -25,8 +25,7 @@ extern xQueueHandle queue_data;
 extern st_bg96_config bg96_config;
 
 
-
-enum en_raise_server
+/*enum en_raise_server
 {
 	STATUS_MODEM,
 	STATUS_SIM,
@@ -36,12 +35,29 @@ enum en_raise_server
 	DESACTIVATE_MQTT,
 	SEND_ERROR,
 };
+*/
+typedef enum
+{
+	UP_CONECTION,
+	DOWN_CONECTION,
+	SEND_DATA_MQTT,
+}en_event_conection;
+
+typedef struct
+{
+	en_event_conection event_conection;
+
+}st_event_conection;
 
 struct st_config_mqtt_server
 {
 	char topic[30];
 };
+
+
+void reset_modem(void);
 void task_raise_server(void *p_parameter);
-em_bg96_error_handling write_data(char *command, char *request, char *buffer, uint32_t time);
+void task_management_conection_server_mqtt(void *p_parameter);
+em_bg96_error_handling write_data(const char *command, const char *request, char *buffer, uint32_t time);
 
 #endif /* INC_TASK_RAISE_SERVER_H_ */
