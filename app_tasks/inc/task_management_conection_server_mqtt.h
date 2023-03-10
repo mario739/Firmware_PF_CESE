@@ -5,8 +5,8 @@
  *      Author: ferna
  */
 
-#ifndef INC_TASK_RAISE_SERVER_H_
-#define INC_TASK_RAISE_SERVER_H_
+#ifndef INC_TASK_MANAGEMENT_CONECTION_SERVER_MQTT_H_
+#define INC_TASK_MANAGEMENT_CONECTION_SERVER_MQTT_H_
 
 #include "app.h"
 #include "cmsis_os.h"
@@ -60,4 +60,4 @@ void task_raise_server(void *p_parameter);
 void task_management_conection_server_mqtt(void *p_parameter);
 em_bg96_error_handling write_data(const char *command, const char *request, char *buffer, uint32_t time);
 
-#endif /* INC_TASK_RAISE_SERVER_H_ */
+#endif /* INC_TASK_MANAGEMENT_CONECTION_SERVER_MQTT_H_ */

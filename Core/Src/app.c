@@ -11,6 +11,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <task_management_conection_server_mqtt.h>
 #include "app.h"
 #include "cmsis_os.h"
 #include "main.h"
@@ -19,24 +20,13 @@
 #include "driver_bg96.h"
 #include "callback_functions.h"
 #include "task_data_acquisition.h"
-#include "task_raise_server.h"
-#include "task_debug.h"
-#include "task_events_fails.h"
 
 xQueueHandle queue_data;
-xQueueHandle queue_trama;
 xQueueHandle queue_data_adquisition;
 xQueueHandle queue_server_mqtt;
 xQueueHandle queue_app;
 
-
 aht10_config_t aht_config;
-
-uint8_t data_debug;
-
-TaskHandle_t xHandle_raise_server;
-TaskHandle_t xHandle_data_adquisition;
-
 st_bg96_config bg96_config={.send_data_device=NULL,
                             .last_error=BG96_NO_ERROR,
                             .self_tcp={.context_id=1,
@@ -57,7 +47,10 @@ st_bg96_config bg96_config={.send_data_device=NULL,
 typedef enum
 {
 	CONFIG,
-	PROCES,
+	DATA_ADQUISITION,
+	UP_SERVER_MQTT,
+	DOWN_SERVER_MQTT,
+	SEND_DATA_SERVER_MQTT,
 	LOW_POWER,
 }en_state_machine_app;
 
@@ -68,45 +61,51 @@ typedef struct
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	ts_event_app event_app={.event_conetion=PROCES};
+	ts_event_app event_app={.event_conetion=UP_SERVER_MQTT};
 	BaseType_t xHigherPriorityTaskWoken;
 	xHigherPriorityTaskWoken=pdFALSE;
 	if (htim->Instance==htim6.Instance){
 		xQueueSendFromISR(queue_app,&event_app,&xHigherPriorityTaskWoken);
-		HAL_TIM_Base_Stop(htim);
+		event_app.event_conetion=SEND_DATA_SERVER_MQTT;
+		xQueueSendFromISR(queue_app,&event_app,&xHigherPriorityTaskWoken);
+		event_app.event_conetion=DOWN_SERVER_MQTT;
+		xQueueSendFromISR(queue_app,&event_app,&xHigherPriorityTaskWoken);
+		HAL_TIM_Base_Stop_IT(htim);
 	}
 }
 
-static void task_app_main()
+static void task_app_main(void *p_parameter)
 {
 	st_event_conection event_conection;
 	st_event_data_adquisition event_data_adquisition;
 	ts_event_app event_app;
-	ts_event_app event_app2;
 	while(1)
 	{
  		xQueueReceive(queue_app, &event_app, portMAX_DELAY);
 		switch (event_app.event_conetion) {
 			case CONFIG:
 				break;
-			case PROCES:
+			case DATA_ADQUISITION:
 				event_data_adquisition.states_data_adquisition=ADQUISITION;
 				xQueueSend(queue_data_adquisition,&event_data_adquisition,0);
+				break;
+			case UP_SERVER_MQTT:
 				event_conection.event_conection=UP_CONECTION;
 				xQueueSend(queue_server_mqtt,&event_conection,0);
-				if (bg96_config.status_mqtt_server==SERVER_MQTT_UP)
-				{
-					event_conection.event_conection=SEND_DATA_MQTT;
-					xQueueSend(queue_server_mqtt,&event_conection,0);
-				}
+				break;
+			case DOWN_SERVER_MQTT:
 				event_conection.event_conection=DOWN_CONECTION;
-				xQueueSend(queue_server_mqtt,&event_conection,portMAX_DELAY);
-				event_app2.event_conetion=LOW_POWER;
-				xQueueSend(queue_app,&event_app2,0);
+				xQueueSend(queue_server_mqtt,&event_conection,0);
+				HAL_TIM_Base_Start_IT(&htim6);
+				break;
+			case SEND_DATA_SERVER_MQTT:
+				event_conection.event_conection=SEND_DATA_MQTT;
+				xQueueSend(queue_server_mqtt,&event_conection,0);
 				break;
 			case LOW_POWER:
-				HAL_TIM_Base_Start_IT(&htim6);
-				HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+				//event_app2.event_conetion=LOW_POWER;
+				//xQueueSend(queue_app,&event_app2,0);
+				//HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 				break;
 			default:
 				break;
@@ -120,21 +119,20 @@ int app(void)
     aht10Init(&aht_config, write_I2C_STM32L432_port, read_I2C_STM32L432_port, delay_STM32L432_port);
     init_driver(&bg96_config,write_data,reset_modem);
 
-	res=xTaskCreate(task_app_main, (const char*)"task_app_main", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
+	res=xTaskCreate(task_app_main, (const char*)"task_app_main", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 	configASSERT(res == pdPASS);
 
-	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", configMINIMAL_STACK_SIZE , NULL,tskIDLE_PRIORITY + 1, &xHandle_data_adquisition);
+	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", configMINIMAL_STACK_SIZE , NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
 	
-	res = xTaskCreate(task_management_conection_server_mqtt, (const char*)"task_debug", configMINIMAL_STACK_SIZE*2, NULL,tskIDLE_PRIORITY + 1, NULL);
+	res = xTaskCreate(task_management_conection_server_mqtt, (const char*)"task_management_conection_server_mqtt", configMINIMAL_STACK_SIZE*2, NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
 
 
-	queue_data=xQueueCreate(3, sizeof(struct st_data_sensors));
-	queue_data_adquisition=xQueueCreate(2,sizeof(st_event_data_adquisition));
-	queue_trama=xQueueCreate(4, sizeof(char *));
-	queue_server_mqtt=xQueueCreate(1,sizeof(st_event_conection));
-	queue_app=xQueueCreate(2,sizeof(ts_event_app));
+	queue_data=xQueueCreate(1, sizeof(struct st_data_sensors));
+	queue_data_adquisition=xQueueCreate(1,sizeof(st_event_data_adquisition));
+	queue_server_mqtt=xQueueCreate(3,sizeof(st_event_conection));
+	queue_app=xQueueCreate(3,sizeof(ts_event_app));
 
 	HAL_TIM_Base_Start_IT(&htim6);
 	osKernelStart();
