@@ -2,14 +2,15 @@
 
 #include <task_management_conection_server_mqtt.h>
 
-uint8_t  rx_tem;
-uint8_t rx_buffer[300];
-uint16_t rx_index=0;
+volatile uint8_t  rx_tem;
+volatile uint8_t rx_buffer[300];
+volatile uint16_t rx_index=0;
 
 extern xQueueHandle queue_debug;
 extern xQueueHandle queue_server_mqtt;
+extern xQueueHandle queue_rx;
 extern TaskHandle_t xHandle_raise_server;
-
+extern SemaphoreHandle_t semaphore_loop;
 
 void reset_modem(void)
 {
@@ -52,8 +53,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 		flag=1;
 		while(flag)
 		{
-			switch(st_event_conection.event_conection)
-			{
+			switch(st_event_conection.event_conection){
 				case UP_CONECTION:
 					switch (up_conection) {
 						case UP_SET_PARAMETER_CONTEXT_TCP:
@@ -81,7 +81,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 							}
 							break;
 						case UP_CONNECT_BROKER_MQTT:
-							if (connect_server_mqtt(&bg96_config)) {
+							if (connect_server_mqtt(&bg96_config)==FT_BG96_OK) {
 								bg96_config.status_mqtt_server=SERVER_MQTT_UP;
 								up_conection=UP_SET_PARAMETER_CONTEXT_TCP;
 								flag=0;
@@ -136,7 +136,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 
 					break;
 				case SEND_DATA_MQTT:
-						xQueueReceive(queue_data,&data_sensors2,0);
+						xQueueReceive(queue_data,&data_sensors2,portMAX_DELAY);
 						sprintf(data,"{\"bateria\":%u,\"humedad_suelo\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u}",data_sensors2.batery,
 						data_sensors2.soil_moisture_1,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
 						send_data_mqtt(&bg96_config,config_mqtt_server.topic,data);
@@ -147,6 +147,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 			}
 
 		}
+		xSemaphoreGive(semaphore_loop);
 	}
 }
 
@@ -161,8 +162,9 @@ em_bg96_error_handling write_data(const char *command, const char *request, char
 	HAL_UART_Receive_IT(&huart1,&rx_tem,1);
 	for (i = 0; i < time; ++i)
 	{
-		vTaskDelay(xDelay);
+		HAL_Delay(1);
 		res=strstr((char*)rx_buffer,request);
+		HAL_UART_Receive_IT(&huart1,&rx_tem,1);
 		if (res!= NULL)
 		{
 			HAL_UART_Transmit(&huart2, rx_buffer,strlen((const char *)rx_buffer),200);
@@ -171,11 +173,18 @@ em_bg96_error_handling write_data(const char *command, const char *request, char
 			return FT_BG96_OK;
 		}
 	}
+
 	rx_index=0;
 	HAL_UART_Transmit(&huart2, rx_buffer,strlen((const char *)rx_buffer),200);
 	memset((char*)rx_buffer, 0, sizeof(rx_buffer));
 	return FT_BG96_TIMEOUT;
 }
+
+/*em_bg96_error_handling write_data(const char *command, const char *request, char *buffer, uint32_t time)
+{
+
+
+}*/
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -183,7 +192,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		rx_buffer[rx_index]=(char)rx_tem;
 		rx_index++;
-		rx_tem=0;
 		HAL_UART_Receive_IT(&huart1,&rx_tem,1);
 	}
 }

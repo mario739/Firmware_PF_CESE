@@ -19,11 +19,11 @@ void task_data_acquisition(void *p_parameter)
 	st_event_data_adquisition event_data_adquisition;
 	while (1)
 	{
-		xQueueReceive(queue_data,&event_data_adquisition, portMAX_DELAY);
+		xQueueReceive(queue_data_adquisition,&event_data_adquisition, portMAX_DELAY);
 		switch (event_data_adquisition.states_data_adquisition)
 		{
 			case ADQUISITION:
-				aht10_get_humedity(&aht_config,&data_sensors.ambient_humidity);
+				/*aht10_get_humedity(&aht_config,&data_sensors.ambient_humidity);
 				aht10_get_temperature(&aht_config,&data_sensors.ambient_temperature);
 				HAL_ADC_Start(&hadc1);
 				HAL_ADC_PollForConversion(&hadc1, 100);
@@ -34,7 +34,7 @@ void task_data_acquisition(void *p_parameter)
 				data_sensors.soil_moisture_2= 100 - data_sensors.soil_moisture_2;
 				HAL_ADC_PollForConversion(&hadc1, 100);
 				data_sensors.radiacion= map(HAL_ADC_GetValue(&hadc1), 1000, 2500, 0, 15);
-				HAL_ADC_Stop(&hadc1);
+				HAL_ADC_Stop(&hadc1);*/
 				xQueueSend(queue_data,&data_sensors,portMAX_DELAY);
 				break;
 			default:
