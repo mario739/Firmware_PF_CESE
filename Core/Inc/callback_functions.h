@@ -10,13 +10,9 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "app.h"
 #include "cmsis_os.h"
 #include "main.h"
 #include "aht10.h"
-#include "driver_bg96.h"
-
-
 
 aht10_status_fnc write_I2C_STM32L432_port(uint8_t addr, uint8_t *buffer, uint8_t amount);
 

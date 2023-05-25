@@ -29,23 +29,7 @@ xQueueHandle queue_rx;
 SemaphoreHandle_t semaphore_loop;
 
 aht10_config_t aht_config;
-st_bg96_config bg96_config={.send_data_device=NULL,
-                            .last_error=BG96_NO_ERROR,
-                            .self_tcp={.context_id=1,
-                                       .context_type=1,
-                                       .method_authentication=1,
-                                       .tcp_apn="4g.entel",
-                                       .tcp_password="",
-                                       .tcp_username=""},
-                            .self_mqtt={.identifier_socket_mqtt=0,
-                                        .quality_service=0,
-                                        .host_name="\"industrial.api.ubidots.com\"",
-                                        .port=1883,
-                                        .mqtt_client_id="123a56cb9",
-                                        .mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL",
-                                        .mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL",},
-										.status_mqtt_server=DOWN_CONECTION};
-
+st_bg96_config bg96_config;
 typedef enum
 {
 	CONFIG,
@@ -111,7 +95,10 @@ static void task_app_main(void *p_parameter)
 	ts_event_app event_app;
 	while(1)
 	{
-		xSemaphoreTake(semaphore_loop,portMAX_DELAY);
+		event_app.event_conetion=DATA_ADQUISITION;
+		xQueueSend(queue_app,&event_app,0);
+		//vTaskDelay(200);
+		/*xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		event_app.event_conetion=DATA_ADQUISITION;
 		xQueueSend(queue_app,&event_app,0);
 		event_app.event_conetion=UP_SERVER_MQTT;
@@ -127,7 +114,7 @@ static void task_app_main(void *p_parameter)
 		xQueueSend(queue_app,&event_app,0);
 		xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		HAL_TIM_Base_Start_IT(&htim6);
-		HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+		HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);*/
 	}
 }
 
@@ -138,17 +125,17 @@ int app(void)
     aht10Init(&aht_config, write_I2C_STM32L432_port, read_I2C_STM32L432_port, delay_STM32L432_port);
     init_driver(&bg96_config,write_data,reset_modem);
 
-	res=xTaskCreate(task_event_dispacher, (const char*)"task_event_dispache", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
-	configASSERT(res == pdPASS);
+	//res=xTaskCreate(task_event_dispacher, (const char*)"task_event_dispache", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	//configASSERT(res == pdPASS);
 
 	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", 50 , NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
 	
-	res = xTaskCreate(task_management_conection_server_mqtt, (const char*)"task_management_conection_server_mqtt", configMINIMAL_STACK_SIZE*2, NULL,tskIDLE_PRIORITY + 1, NULL);
-	configASSERT(res == pdPASS);
+	//res = xTaskCreate(task_management_conection_server_mqtt, (const char*)"task_management_conection_server_mqtt", configMINIMAL_STACK_SIZE*2, NULL,tskIDLE_PRIORITY + 1, NULL);
+	//configASSERT(res == pdPASS);
 
-	res=xTaskCreate(task_app_main, (const char*)"task_app_main", 50, NULL, tskIDLE_PRIORITY + 1, NULL);
-	configASSERT(res == pdPASS);
+	//res=xTaskCreate(task_app_main, (const char*)"task_app_main", 50, NULL, tskIDLE_PRIORITY + 1, NULL);
+	//configASSERT(res == pdPASS);
 
 	queue_app=xQueueCreate(3,sizeof(ts_event_app));
 	queue_data=xQueueCreate(1, sizeof(struct st_data_sensors));

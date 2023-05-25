@@ -92,8 +92,7 @@ aht10_status_fnc aht10_get_temperature(aht10_config_t*obj, int8_t *data)
   } 
   uint8_t buffer_read[6]={0};
   uint32_t data_temperature=0;
-  aht10_status_fnc status=AHT10_ERROR;
-  status=aht10_launch_measurement(obj);
+  aht10_status_fnc status=aht10_launch_measurement(obj);
   if (status==AHT10_OK)
   {
     status=obj->readI2C(AHT10_ADDRESS_SLAVE ,buffer_read,6);

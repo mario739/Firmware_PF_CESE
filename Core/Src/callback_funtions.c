@@ -25,5 +25,5 @@ aht10_status_fnc read_I2C_STM32L432_port(uint8_t addr, uint8_t *buffer, uint8_t 
 
 void delay_STM32L432_port(uint8_t delay)
 {
-  vTaskDelay(delay);
+  HAL_Delay(delay);
 }

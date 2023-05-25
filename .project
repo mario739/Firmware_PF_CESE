@@ -29,11 +29,4 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>drivers_devices/src</name>
-			<type>2</type>
-			<location>E:/CursosOnline2020/EspecializacionEnSistemasEmbebidosUBA2021/ProyectoFinalEspecializacion/driver_bg96/src</location>
-		</link>
-	</linkedResources>
 </projectDescription>

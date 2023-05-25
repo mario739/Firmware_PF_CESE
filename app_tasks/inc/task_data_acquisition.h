@@ -27,10 +27,10 @@ typedef enum
 struct st_data_sensors{
 	uint8_t ambient_humidity;
 	int8_t ambient_temperature;
-	uint8_t batery;
-	uint8_t radiacion;
-	uint8_t soil_moisture_1;
-	uint8_t soil_moisture_2;
+	uint16_t batery;
+	uint16_t radiacion;
+	uint16_t soil_moisture_1;
+	uint16_t soil_moisture_2;
 };
 
 typedef struct
