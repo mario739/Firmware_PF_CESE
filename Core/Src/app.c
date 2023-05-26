@@ -96,7 +96,7 @@ static void task_app_main(void *p_parameter)
 	while(1)
 	{
 		event_app.event_conetion=DATA_ADQUISITION;
-		xQueueSend(queue_app,&event_app,0);
+		xQueueSend(queue_app,&event_app,portMAX_DELAY);
 		//vTaskDelay(200);
 		/*xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		event_app.event_conetion=DATA_ADQUISITION;
@@ -125,8 +125,8 @@ int app(void)
     aht10Init(&aht_config, write_I2C_STM32L432_port, read_I2C_STM32L432_port, delay_STM32L432_port);
     init_driver(&bg96_config,write_data,reset_modem);
 
-	//res=xTaskCreate(task_event_dispacher, (const char*)"task_event_dispache", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-	//configASSERT(res == pdPASS);
+	res=xTaskCreate(task_event_dispacher, (const char*)"task_event_dispache", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	configASSERT(res == pdPASS);
 
 	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", 50 , NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
@@ -134,8 +134,8 @@ int app(void)
 	//res = xTaskCreate(task_management_conection_server_mqtt, (const char*)"task_management_conection_server_mqtt", configMINIMAL_STACK_SIZE*2, NULL,tskIDLE_PRIORITY + 1, NULL);
 	//configASSERT(res == pdPASS);
 
-	//res=xTaskCreate(task_app_main, (const char*)"task_app_main", 50, NULL, tskIDLE_PRIORITY + 1, NULL);
-	//configASSERT(res == pdPASS);
+	res=xTaskCreate(task_app_main, (const char*)"task_app_main", 50, NULL, tskIDLE_PRIORITY + 1, NULL);
+	configASSERT(res == pdPASS);
 
 	queue_app=xQueueCreate(3,sizeof(ts_event_app));
 	queue_data=xQueueCreate(1, sizeof(struct st_data_sensors));
