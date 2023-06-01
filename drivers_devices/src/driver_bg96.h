@@ -18,6 +18,8 @@
 #include "commands.h"
 
 
+#define RS_BG96_OK "OK\r\n"
+
 
 typedef enum
 {

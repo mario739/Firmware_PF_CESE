@@ -12,7 +12,9 @@
 #include "driver_bg96.h"
 
 
-static const char RS_BG96_OK[]="OK\r\n";
+
+
+//static const char RS_BG96_OK[]="OK\r\n";
 static const char RS_BG96_SIGNAL[]=">";
 static const char RS_BG96_CERO[]="0\r\n";
 static const char CMD_BG96_STATUS_MODEM[]="AT\r";
@@ -27,12 +29,13 @@ static const char CMD_BG96_STATUS_PDP_CONTEXT[]="AT+QIACT?\r";
 
 em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_data_device,pf_reset_modem ft_reset_modem)
 {
+    if (ft_send_data_device!=NULL) {
+    	self->send_data_device=ft_send_data_device;
+	}
+    if (ft_reset_modem!=NULL) {
+        self->f_reset_modem=ft_reset_modem;
+	}
     self->ft_resp=FT_BG96_OK;
-    self->send_data_device=ft_send_data_device;
-    self->f_reset_modem=ft_reset_modem;
-    self->last_error=BG96_NO_ERROR;
-
-    self->send_data_device=NULL;
 	self->last_error=BG96_NO_ERROR;
 	self->self_tcp.context_id=1;
 	self->self_tcp.context_type=1;

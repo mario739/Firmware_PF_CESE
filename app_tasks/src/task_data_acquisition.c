@@ -46,7 +46,7 @@ void task_data_acquisition(void *p_parameter)
 				data_sensors.radiacion= HAL_ADC_GetValue(&hadc1);
 				data_sensors.radiacion= map(data_sensors.radiacion, 1000, 2500, 0, 15);
 				HAL_ADC_Stop(&hadc1);
-				xQueueSend(queue_data,&data_sensors,0);
+				//xQueueSend(queue_data,&data_sensors,0);
 				break;
 			default:
 				break;

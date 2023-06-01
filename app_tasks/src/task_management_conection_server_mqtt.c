@@ -11,6 +11,11 @@ extern xQueueHandle queue_server_mqtt;
 extern xQueueHandle queue_rx;
 extern TaskHandle_t xHandle_raise_server;
 extern SemaphoreHandle_t semaphore_loop;
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+extern xQueueHandle queue_trama;
+extern xQueueHandle queue_data;
+extern st_bg96_config bg96_config;
 
 void reset_modem(void)
 {
@@ -136,7 +141,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 
 					break;
 				case SEND_DATA_MQTT:
-						xQueueReceive(queue_data,&data_sensors2,portMAX_DELAY);
+						//xQueueReceive(queue_data,&data_sensors2,portMAX_DELAY);
 						sprintf(data,"{\"bateria\":%u,\"humedad_suelo\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u}",data_sensors2.batery,
 						data_sensors2.soil_moisture_1,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
 						send_data_mqtt(&bg96_config,config_mqtt_server.topic,data);
@@ -147,7 +152,6 @@ void task_management_conection_server_mqtt(void *p_parameter)
 			}
 
 		}
-		xSemaphoreGive(semaphore_loop);
 	}
 }
 
@@ -179,12 +183,6 @@ em_bg96_error_handling write_data(const char *command, const char *request, char
 	memset((char*)rx_buffer, 0, sizeof(rx_buffer));
 	return FT_BG96_TIMEOUT;
 }
-
-/*em_bg96_error_handling write_data(const char *command, const char *request, char *buffer, uint32_t time)
-{
-
-
-}*/
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {

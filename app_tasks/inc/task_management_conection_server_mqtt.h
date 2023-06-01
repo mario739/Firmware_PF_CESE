@@ -18,13 +18,6 @@
 #include "task_data_acquisition.h"
 
 
-extern UART_HandleTypeDef huart1;
-extern UART_HandleTypeDef huart2;
-extern xQueueHandle queue_trama;
-extern xQueueHandle queue_data;
-extern st_bg96_config bg96_config;
-
-
 /*enum en_raise_server
 {
 	STATUS_MODEM,
