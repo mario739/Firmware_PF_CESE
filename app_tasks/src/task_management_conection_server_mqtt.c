@@ -88,8 +88,10 @@ void task_management_conection_server_mqtt(void *p_parameter)
 						case UP_CONNECT_BROKER_MQTT:
 							if (connect_server_mqtt(&bg96_config)==FT_BG96_OK) {
 								bg96_config.status_mqtt_server=SERVER_MQTT_UP;
+								HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_SET);
 								up_conection=UP_SET_PARAMETER_CONTEXT_TCP;
 								flag=0;
+								xSemaphoreGive(semaphore_loop);
 							}
 							else{
 								up_conection=UP_ERROR_CONECTION;
@@ -98,6 +100,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 						case UP_ERROR_CONECTION:
 							up_conection=UP_SET_PARAMETER_CONTEXT_TCP;
 							flag=0;
+							xSemaphoreGive(semaphore_loop);
 							break;
 						default:
 							break;
@@ -124,6 +127,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 						case DOWN_DESACTIVATE_MQTT:
 							if (desactivate_context_pdp(&bg96_config)==FT_BG96_OK) {
 								bg96_config.status_mqtt_server=SERVER_MQTT_DOWN;
+								HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_RESET);
 								down_conection=DOWN_CLOSE_BROKE_MQTT;
 								flag=0;
 							}
@@ -133,6 +137,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 							break;
 						case DOWN_ERROR_CONECTION:
 							down_conection=DOWN_CLOSE_BROKE_MQTT;
+							HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_RESET);
 							flag=0;
 							break;
 						default:
@@ -141,11 +146,12 @@ void task_management_conection_server_mqtt(void *p_parameter)
 
 					break;
 				case SEND_DATA_MQTT:
-						//xQueueReceive(queue_data,&data_sensors2,portMAX_DELAY);
-						sprintf(data,"{\"bateria\":%u,\"humedad_suelo\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u}",data_sensors2.batery,
-						data_sensors2.soil_moisture_1,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
+						xQueueReceive(queue_data,&data_sensors2,portMAX_DELAY);
+						sprintf(data,"{\"bateria\":%u,\"humedad_suelo\":%u,\"humedad_suelo_2\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u}",data_sensors2.batery,
+						data_sensors2.soil_moisture_1,data_sensors2.soil_moisture_2,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
 						send_data_mqtt(&bg96_config,config_mqtt_server.topic,data);
 						flag=0;
+						xSemaphoreGive(semaphore_loop);
 					break;
 				default:
 					break;
@@ -166,6 +172,7 @@ em_bg96_error_handling write_data(const char *command, const char *request, char
 	HAL_UART_Receive_IT(&huart1,&rx_tem,1);
 	for (i = 0; i < time; ++i)
 	{
+		//vTaskDelay(1);
 		HAL_Delay(1);
 		res=strstr((char*)rx_buffer,request);
 		HAL_UART_Receive_IT(&huart1,&rx_tem,1);

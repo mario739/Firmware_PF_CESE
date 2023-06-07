@@ -58,10 +58,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	ts_event_system event_system;
 	event_system.events_system=LOOP;
 	xQueueSendFromISR(queue_dispacher,&event_system,0);
-	//if (htim->Instance==htim6.Instance){
-		//xSemaphoreGiveFromISR(semaphore_loop, &xHigherPriorityTaskWoken );
     HAL_TIM_Base_Stop_IT(htim);
-	//}
+
 }
 
 static void task_event_dispacher(void *p_parameter)
@@ -115,13 +113,15 @@ static void task_loop(void *p_parameter)
 		xQueueSend(queue_dispacher,&event_dispacher,portMAX_DELAY);
 		event_dispacher.events_system=UP_SERVER_MQTT;
 		xQueueSend(queue_dispacher,&event_dispacher,portMAX_DELAY);
-		event_dispacher.events_system=DOWN_SERVER_MQTT,
-		xQueueSend(queue_dispacher,&event_dispacher,portMAX_DELAY);
-
+		xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		if (bg96_config.status_mqtt_server==SERVER_MQTT_UP)
 		{
 			event_dispacher.events_system=SEND_DATA_SERVER_MQTT;
+			xQueueSend(queue_dispacher,&event_dispacher,portMAX_DELAY);
+			xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		}
+		event_dispacher.events_system=DOWN_SERVER_MQTT,
+		xQueueSend(queue_dispacher,&event_dispacher,portMAX_DELAY);
 		HAL_TIM_Base_Start_IT(&htim6);
 		HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 	}
@@ -152,8 +152,8 @@ int app(void)
 	queue_data_adquisition=xQueueCreate(1,sizeof(st_event_data_adquisition));
 	queue_server_mqtt=xQueueCreate(3,sizeof(st_event_conection));
 
-	//queue_data=xQueueCreate(1, sizeof(struct st_data_sensors));
-	//semaphore_loop=xSemaphoreCreateBinary();
+	queue_data=xQueueCreate(1, sizeof(struct st_data_sensors));
+	semaphore_loop=xSemaphoreCreateBinary();
 
 	osKernelStart();
 
