@@ -45,14 +45,14 @@ em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_dat
 
 	self->self_mqtt.identifier_socket_mqtt=0;
 	self->self_mqtt.quality_service=0;
-	//self->self_mqtt.host_name="\"industrial.api.ubidots.com\"";
-	self->self_mqtt.host_name="\"test.mosquitto.org\"";
+	self->self_mqtt.host_name="\"industrial.api.ubidots.com\"";
+	//self->self_mqtt.host_name="\"test.mosquitto.org\"";
 	self->self_mqtt.port=1883;
 	self->self_mqtt.mqtt_client_id="123a56cb9";
-	//self->self_mqtt.mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
-	//self->self_mqtt.mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
-	self->self_mqtt.mqtt_username="";
-	self->self_mqtt.mqtt_password="";
+	self->self_mqtt.mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
+	self->self_mqtt.mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
+	//self->self_mqtt.mqtt_username="";
+	//self->self_mqtt.mqtt_password="";
 	self->status_mqtt_server=SERVER_MQTT_DOWN;
 
     return self->ft_resp;

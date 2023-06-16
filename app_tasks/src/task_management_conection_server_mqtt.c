@@ -45,8 +45,8 @@ void task_management_conection_server_mqtt(void *p_parameter)
 	en_down_conection down_conection=DOWN_CLOSE_BROKE_MQTT;
 	en_up_conection up_conection=UP_SET_PARAMETER_CONTEXT_TCP;
 	struct st_data_sensors data_sensors2;
-	//struct st_config_mqtt_server config_mqtt_server={.topic="/v1.6/devices/monitoreo_iot"};
-	struct st_config_mqtt_server config_mqtt_server={.topic="testmario/topic1"};
+	struct st_config_mqtt_server config_mqtt_server={.topic="/v1.6/devices/monitoreo_iot"};
+	//struct st_config_mqtt_server config_mqtt_server={.topic="testmario/topic1"};
 	char data[200];
 	uint8_t flag=1;
 	while(1)

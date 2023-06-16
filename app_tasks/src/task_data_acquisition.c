@@ -31,8 +31,8 @@ void task_data_acquisition(void *p_parameter)
 		switch (event_data_adquisition.states_data_adquisition)
 		{
 			case ADQUISITION:
- 				//aht10_get_humedity(&aht_config,&data_sensors.ambient_humidity);
-				//aht10_get_temperature(&aht_config,&data_sensors.ambient_temperature);
+ 				aht10_get_humedity(&aht_config,&data_sensors.ambient_humidity);
+				aht10_get_temperature(&aht_config,&data_sensors.ambient_temperature);
 				HAL_ADC_Start(&hadc1);
 				HAL_ADC_PollForConversion(&hadc1, 100);
 				data_sensors.soil_moisture_1=HAL_ADC_GetValue(&hadc1);
