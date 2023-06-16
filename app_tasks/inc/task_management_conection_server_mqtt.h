@@ -12,23 +12,10 @@
 #include "cmsis_os.h"
 #include "main.h"
 #include "aht10.h"
-#include "driver_bg96.h"
 #include "callback_functions.h"
 #include "adc.h"
 #include "task_data_acquisition.h"
-
-
-/*enum en_raise_server
-{
-	STATUS_MODEM,
-	STATUS_SIM,
-	SET_PARAMETER_CONTEXT_TCP,
-	ACTIVATE_CONTEXT_PDP,
-	SEND_DATA_MQTT,
-	DESACTIVATE_MQTT,
-	SEND_ERROR,
-};
-*/
+#include "driver_bg96.h"
 typedef enum
 {
 	UP_CONECTION,
@@ -46,7 +33,6 @@ struct st_config_mqtt_server
 {
 	char topic[30];
 };
-
 
 void reset_modem(void);
 void task_raise_server(void *p_parameter);

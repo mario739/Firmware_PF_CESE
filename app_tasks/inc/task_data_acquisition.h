@@ -12,7 +12,6 @@
 #include "cmsis_os.h"
 #include "main.h"
 #include "aht10.h"
-#include "driver_bg96.h"
 #include "callback_functions.h"
 #include "adc.h"
 
@@ -21,8 +20,6 @@ typedef enum
 {
 	ADQUISITION
 }en_states_data_adquisition;
-
-
 
 struct st_data_sensors{
 	uint8_t ambient_humidity;
@@ -37,5 +34,6 @@ typedef struct
 {
 	en_states_data_adquisition states_data_adquisition;
 }st_event_data_adquisition;
+
 void task_data_acquisition(void *p_parameter);
 #endif /* INC_TASK_DATA_ACQUISITION_H_ */

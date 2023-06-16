@@ -74,7 +74,6 @@ static void task_event_dispacher(void *p_parameter)
  		xQueueReceive(queue_dispacher, &event_system, portMAX_DELAY);
 		switch (event_system.events_system) {
 			case LOOP:
-				event_loop.data=event_loop.data + 1;
 				xQueueSend(queue_loop,&event_loop,0);
 				break;
 			case DATA_ADQUISITION:
@@ -122,6 +121,7 @@ static void task_loop(void *p_parameter)
 		}
 		event_dispacher.events_system=DOWN_SERVER_MQTT,
 		xQueueSend(queue_dispacher,&event_dispacher,portMAX_DELAY);
+		xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		HAL_TIM_Base_Start_IT(&htim6);
 		HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 	}

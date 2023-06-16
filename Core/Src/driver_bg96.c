@@ -12,9 +12,7 @@
 #include "driver_bg96.h"
 
 
-
-
-//static const char RS_BG96_OK[]="OK\r\n";
+static const char RS_BG96_OK[]="OK\r\n";
 static const char RS_BG96_SIGNAL[]=">";
 static const char RS_BG96_CERO[]="0\r\n";
 static const char CMD_BG96_STATUS_MODEM[]="AT\r";
@@ -35,8 +33,9 @@ em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_dat
     if (ft_reset_modem!=NULL) {
         self->f_reset_modem=ft_reset_modem;
 	}
+    
     self->ft_resp=FT_BG96_OK;
-	self->last_error=BG96_NO_ERROR;
+    self->last_error=BG96_NO_ERROR;
 	self->self_tcp.context_id=1;
 	self->self_tcp.context_type=1;
 	self->self_tcp.method_authentication=1;
@@ -46,12 +45,14 @@ em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_dat
 
 	self->self_mqtt.identifier_socket_mqtt=0;
 	self->self_mqtt.quality_service=0;
-	self->self_mqtt.host_name="\"industrial.api.ubidots.com\"";
+	//self->self_mqtt.host_name="\"industrial.api.ubidots.com\"";
+	self->self_mqtt.host_name="\"test.mosquitto.org\"";
 	self->self_mqtt.port=1883;
 	self->self_mqtt.mqtt_client_id="123a56cb9";
-	self->self_mqtt.mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
-	self->self_mqtt.mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
-
+	//self->self_mqtt.mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
+	//self->self_mqtt.mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
+	self->self_mqtt.mqtt_username="";
+	self->self_mqtt.mqtt_password="";
 	self->status_mqtt_server=SERVER_MQTT_DOWN;
 
     return self->ft_resp;
@@ -244,7 +245,7 @@ em_bg96_error_handling desactivate_context_pdp(st_bg96_config *self)
     self->ft_resp=FT_BG96_OK;
     char cmd[15];
     sprintf(cmd,"AT+QIDEACT=%u\r",self->self_tcp.context_id);
-    self->ft_resp=self->send_data_device(cmd,RS_BG96_OK,self->buffer_resp,40000);
+    self->ft_resp=self->send_data_device(cmd,RS_BG96_OK,self->buffer_resp,4000);
     if (self->ft_resp!=FT_BG96_OK)
     {
         self->last_error=BG96_ERROR_DESACTIVATE_CONTEXT_PDP;
