@@ -34,9 +34,10 @@ struct st_config_mqtt_server
 	char topic[30];
 };
 
-void reset_modem(void);
 void task_raise_server(void *p_parameter);
 void task_management_conection_server_mqtt(void *p_parameter);
 em_bg96_error_handling write_data(const char *command, const char *request, char *buffer, uint32_t time);
-
+void reset_modem(void);
+void on_modem(void);
+void off_modem(void);
 #endif /* INC_TASK_MANAGEMENT_CONECTION_SERVER_MQTT_H_ */

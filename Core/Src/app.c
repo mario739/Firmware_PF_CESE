@@ -59,7 +59,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	event_system.events_system=LOOP;
 	xQueueSendFromISR(queue_dispacher,&event_system,0);
     HAL_TIM_Base_Stop_IT(htim);
-
 }
 
 static void task_event_dispacher(void *p_parameter)
@@ -131,8 +130,8 @@ int app(void)
 {
 	BaseType_t res;
 
-    aht10Init(&aht_config, write_I2C_STM32L432_port, read_I2C_STM32L432_port, delay_STM32L432_port);
     init_driver(&bg96_config,write_data,reset_modem);
+    aht10Init(&aht_config, write_I2C_STM32L432_port, read_I2C_STM32L432_port, delay_STM32L432_port);
 
 	res=xTaskCreate(task_event_dispacher, (const char*)"task_event_dispache", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
 	configASSERT(res == pdPASS);
@@ -146,13 +145,12 @@ int app(void)
 	res = xTaskCreate(task_data_acquisition, (const char*)"task_data_acquisition", 50 , NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
 
-
 	queue_dispacher=xQueueCreate(3,sizeof(ts_event_system));
 	queue_loop=xQueueCreate(3,sizeof(st_event_conection));
 	queue_data_adquisition=xQueueCreate(1,sizeof(st_event_data_adquisition));
 	queue_server_mqtt=xQueueCreate(3,sizeof(st_event_conection));
-
 	queue_data=xQueueCreate(1, sizeof(struct st_data_sensors));
+
 	semaphore_loop=xSemaphoreCreateBinary();
 
 	osKernelStart();

@@ -4,5 +4,4 @@
 #define APP_H
 
 int app(void);
-
 #endif
