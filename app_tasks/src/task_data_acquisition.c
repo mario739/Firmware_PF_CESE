@@ -18,8 +18,22 @@ static uint32_t map(uint32_t value, uint32_t inputMin, uint32_t inputMax, uint32
 	else if (value>=inputMax) {
 		value=inputMax;
 	}
-
   return ((((value - inputMin) * (outputMax - outputMin)) / (inputMax - inputMin)) + outputMin);
+}
+
+static void read_sensor_hl69(uint16_t* sensor_hl69)
+{
+	HAL_ADC_PollForConversion(&hadc1, 100);
+	*sensor_hl69=HAL_ADC_GetValue(&hadc1);
+	*sensor_hl69=map(*sensor_hl69, 2700, 4001, 0, 100);
+	*sensor_hl69= 100 - *sensor_hl69;
+}
+
+static void read_sensor_ml8511(uint16_t* sensor_ml8511)
+{
+	HAL_ADC_PollForConversion(&hadc1, 100);
+	*sensor_ml8511= HAL_ADC_GetValue(&hadc1);
+	*sensor_ml8511= map(*sensor_ml8511, 1000, 2500, 0, 15);
 }
 
 void task_data_acquisition(void *p_parameter)
@@ -28,13 +42,17 @@ void task_data_acquisition(void *p_parameter)
 	while (1)
 	{
 		xQueueReceive(queue_data_adquisition,&event_data_adquisition, portMAX_DELAY);
+
 		switch (event_data_adquisition.states_data_adquisition)
 		{
 			case ADQUISITION:
  				aht10_get_humedity(&aht_config,&data_sensors.ambient_humidity);
 				aht10_get_temperature(&aht_config,&data_sensors.ambient_temperature);
 				HAL_ADC_Start(&hadc1);
-				HAL_ADC_PollForConversion(&hadc1, 100);
+				read_sensor_hl69(&data_sensors.soil_moisture_1);
+				read_sensor_hl69(&data_sensors.soil_moisture_2);
+				read_sensor_ml8511(&data_sensors.radiacion);
+				/*HAL_ADC_PollForConversion(&hadc1, 100);
 				data_sensors.soil_moisture_1=HAL_ADC_GetValue(&hadc1);
 				data_sensors.soil_moisture_1=map(data_sensors.soil_moisture_1, 2700, 4001, 0, 100);
 				data_sensors.soil_moisture_1= 100 - data_sensors.soil_moisture_1;
@@ -44,7 +62,7 @@ void task_data_acquisition(void *p_parameter)
 				data_sensors.soil_moisture_2= 100 - data_sensors.soil_moisture_2;
 				HAL_ADC_PollForConversion(&hadc1, 100);
 				data_sensors.radiacion= HAL_ADC_GetValue(&hadc1);
-				data_sensors.radiacion= map(data_sensors.radiacion, 1000, 2500, 0, 15);
+				data_sensors.radiacion= map(data_sensors.radiacion, 1000, 2500, 0, 15);*/
 				HAL_ADC_Stop(&hadc1);
 				xQueueSend(queue_data,&data_sensors,0);
 				break;
@@ -53,4 +71,5 @@ void task_data_acquisition(void *p_parameter)
 		}
 	}
 }
+
 

@@ -45,7 +45,7 @@ void on_modem(void)
 	vTaskDelay(700);
 	HAL_GPIO_WritePin(GPIOA,output_reset_Pin, GPIO_PIN_RESET);
 	vTaskDelay(4500);
-	vTaskDelay(50000);
+	vTaskDelay(70000);
 }
 
 void off_modem(void)

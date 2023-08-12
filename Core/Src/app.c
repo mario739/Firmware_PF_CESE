@@ -9,8 +9,6 @@
  * 
  */
 
-#include <string.h>
-#include <stdio.h>
 #include <task_management_conection_server_mqtt.h>
 #include "app.h"
 #include "cmsis_os.h"
@@ -23,7 +21,6 @@
 
 xQueueHandle queue_dispacher;
 xQueueHandle queue_loop;
-
 xQueueHandle queue_data;
 xQueueHandle queue_data_adquisition;
 xQueueHandle queue_server_mqtt;
@@ -31,6 +28,7 @@ SemaphoreHandle_t semaphore_loop;
 
 aht10_config_t aht_config;
 st_bg96_config bg96_config;
+
 typedef enum
 {
 	LOOP,

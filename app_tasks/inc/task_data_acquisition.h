@@ -36,4 +36,5 @@ typedef struct
 }st_event_data_adquisition;
 
 void task_data_acquisition(void *p_parameter);
+
 #endif /* INC_TASK_DATA_ACQUISITION_H_ */

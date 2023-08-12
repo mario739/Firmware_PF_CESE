@@ -11,7 +11,6 @@
  
 #include "driver_bg96.h"
 
-
 static const char RS_BG96_OK[]="OK\r\n";
 static const char RS_BG96_SIGNAL[]=">";
 static const char RS_BG96_CERO[]="0\r\n";
@@ -104,7 +103,6 @@ em_bg96_error_handling get_status_pdp_context(st_bg96_config *self)
     return self->ft_resp;
 }
 
-
 /**
  * @brief Set the mode echo object
  * 
@@ -123,7 +121,6 @@ em_bg96_error_handling set_mode_echo(st_bg96_config *self,uint8_t mode)
     }
     return self->ft_resp;
 }
-
 
 /**
  * @brief Set the format response object
