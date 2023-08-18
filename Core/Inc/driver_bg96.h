@@ -102,7 +102,7 @@ typedef struct
     st_info_product info_product;
     uint8_t           last_error;
     char buffer_resp [100];
-    char command[100];
+    char *current_cmd;
     em_bg96_error_handling ft_resp;
 }st_bg96_config;
 

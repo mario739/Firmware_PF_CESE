@@ -14,16 +14,14 @@
 static const char RS_BG96_OK[]="OK\r\n";
 static const char RS_BG96_SIGNAL[]=">";
 static const char RS_BG96_CERO[]="0\r\n";
-static const char CMD_BG96_STATUS_MODEM[]="AT\r";
-static const char CMD_BG96_STATUS_SIM[]="AT+CPIN?\r";
 static const char CMD_BG96_GET_INFO_PRODUCT[]="ATI\r";
 static const char CMD_BG96_MODE_ECHO_OFF[]="ATE0\r";
 static const char CMD_BG96_MODE_ECHO_ON[]="ATE1\r";
 static const char CMD_BG96_MODE_RESPONSE_LONG[]="ATV1\r";
 static const char CMD_BG96_MODE_RESPONSE_SHORT[]="ATV0\r";
-static const char CMD_BG96_STATUS_PDP_CONTEXT[]="AT+QIACT?\r";
 
-
+#define THINGS_BOARD
+#define ENTEL
 em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_data_device,pf_reset_modem ft_reset_modem)
 {
     if (ft_send_data_device!=NULL) {
@@ -32,39 +30,48 @@ em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_dat
     if (ft_reset_modem!=NULL) {
         self->f_reset_modem=ft_reset_modem;
 	}
-    
     self->status_modem=OFF;
     self->ft_resp=FT_BG96_OK;
     self->last_error=BG96_NO_ERROR;
 	self->self_tcp.context_id=1;
 	self->self_tcp.context_type=1;
 	self->self_tcp.method_authentication=1;
-	//self->self_tcp.tcp_apn="4g.entel";
-	self->self_tcp.tcp_apn="internet.tigo.bol";
 	self->self_tcp.tcp_password="";
 	self->self_tcp.tcp_username="";
-
 	self->self_mqtt.identifier_socket_mqtt=0;
 	self->self_mqtt.quality_service=0;
-	//self->self_mqtt.host_name="\"industrial.api.ubidots.com\"";
-	self->self_mqtt.host_name="\"mqtt.thingsboard.cloud\"";
-	//self->self_mqtt.host_name="\"test.mosquitto.org\"";
 	self->self_mqtt.port=1883;
 	self->self_mqtt.mqtt_client_id="123a56cb9";
-	//self->self_mqtt.mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
-	//self->self_mqtt.mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
-	self->self_mqtt.mqtt_username="ZDqUF9f4VEDj6THx6cAd";
-	self->self_mqtt.mqtt_password="ZDqUF9f4VEDj6THx6cAd";
-	//self->self_mqtt.mqtt_username="";
-	//self->self_mqtt.mqtt_password="";
 	self->status_mqtt_server=SERVER_MQTT_DOWN;
+    #ifdef UBIDOTS
+    self->self_mqtt.host_name="\"industrial.api.ubidots.com\"";
+    self->self_mqtt.mqtt_username="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
+	self->self_mqtt.mqtt_password="BBFF-YymzfOGNgPBLoxxhddQT99r9Wq77rL";
+    #endif
+    #ifdef THINGS_BOARD
+    self->self_mqtt.host_name="\"mqtt.thingsboard.cloud\"";
+    self->self_mqtt.mqtt_username="ZDqUF9f4VEDj6THx6cAd";
+	self->self_mqtt.mqtt_password="ZDqUF9f4VEDj6THx6cAd";
+    #endif
+    #ifdef MOSQUITTO
+    self->self_mqtt.host_name="\"test.mosquitto.org\"";
+    self->self_mqtt.mqtt_username="";
+	self->self_mqtt.mqtt_password="";
+    #endif
+    #ifdef ENTEL
+    self->self_tcp.tcp_apn="4g.entel";
+    #endif
+    #ifdef TIGO
+    self->self_tcp.tcp_apn="internet.tigo.bol";
+    #endif
 
     return self->ft_resp;
 }
 em_bg96_error_handling get_status_modem(st_bg96_config* self)
 {
     self->ft_resp=FT_BG96_OK;
-    self->ft_resp=self->send_data_device(CMD_BG96_STATUS_MODEM,RS_BG96_OK,self->buffer_resp,1000);
+    self->current_cmd="AT\r";
+    self->ft_resp=self->send_data_device(self->current_cmd,RS_BG96_OK,self->buffer_resp,1000);
     if (self->ft_resp!=FT_BG96_OK)
     {
         self->last_error=BG96_ERROR_STATUS_MODEM;
@@ -74,7 +81,8 @@ em_bg96_error_handling get_status_modem(st_bg96_config* self)
 em_bg96_error_handling get_status_sim(st_bg96_config *self)
 {   
     self->ft_resp=FT_BG96_OK;
-    self->ft_resp=self->send_data_device(CMD_BG96_STATUS_SIM,RS_BG96_OK,self->buffer_resp,5000);
+    self->current_cmd="AT+CPIN?\r";
+    self->ft_resp=self->send_data_device(self->current_cmd,RS_BG96_OK,self->buffer_resp,5000);
     if (FT_BG96_OK!=self->ft_resp)
     {
         self->last_error=BG96_ERROR_STATUS_SIM;
@@ -95,7 +103,8 @@ em_bg96_error_handling get_information_product(st_bg96_config *self)
 em_bg96_error_handling get_status_pdp_context(st_bg96_config *self)
 {
     self->ft_resp=FT_BG96_OK;
-    self->ft_resp=self->send_data_device(CMD_BG96_STATUS_PDP_CONTEXT,RS_BG96_OK,self->buffer_resp,1000);
+    self->current_cmd="AT+QIACT?\r";
+    self->ft_resp=self->send_data_device(self->current_cmd,RS_BG96_OK,self->buffer_resp,1000);
     if (FT_BG96_OK!=self->ft_resp)
     {
         self->last_error=BG96_ERROR_PDP_CONTEXT;
@@ -271,7 +280,7 @@ em_bg96_error_handling open_client_mqtt(st_bg96_config *self)
 {
     self->ft_resp=FT_BG96_ERROR;
     char cmd[100];
-    sprintf(cmd,"AT+QMTOPEN=%u,%s,%lu\r",self->self_mqtt.identifier_socket_mqtt,self->self_mqtt.host_name,self->self_mqtt.port);
+    sprintf(cmd,"AT+QMTOPEN=%u,%s,%u\r",self->self_mqtt.identifier_socket_mqtt,self->self_mqtt.host_name,self->self_mqtt.port);
     self->ft_resp=self->send_data_device(cmd,RS_BG96_CERO,self->buffer_resp,75000);
     if (self->ft_resp!=FT_BG96_OK)
     {

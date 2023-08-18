@@ -59,7 +59,7 @@ void off_modem(void)
 
 void task_management_conection_server_mqtt(void *p_parameter)
 {
-	st_event_conection st_event_conection;
+	st_event_conection p_event_conection;
 	en_down_conection down_conection=DOWN_CLOSE_BROKE_MQTT;
 	en_up_conection up_conection=RESET_MODEM;
 	struct st_data_sensors data_sensors2;
@@ -71,11 +71,11 @@ void task_management_conection_server_mqtt(void *p_parameter)
 	uint8_t cont_status=0;
 	while(1)
 	{
-		xQueueReceive(queue_server_mqtt,&st_event_conection,portMAX_DELAY);
+		xQueueReceive(queue_server_mqtt,&p_event_conection,portMAX_DELAY);
 		flag=1;
 		while(flag)
 		{
-			switch(st_event_conection.event_conection){
+			switch(p_event_conection.event_conection){
 				case UP_CONECTION:
 					switch (up_conection) {
 						case RESET_MODEM:
