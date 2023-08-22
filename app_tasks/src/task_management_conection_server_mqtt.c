@@ -135,7 +135,7 @@ void task_management_conection_server_mqtt(void *p_parameter)
 							if (connect_server_mqtt(&bg96_config)==FT_BG96_OK) {
 								bg96_config.status_mqtt_server=SERVER_MQTT_UP;
 								HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_SET);
-								up_conection=UP_SET_PARAMETER_CONTEXT_TCP;
+								up_conection=RESET_MODEM;
 								flag=0;
 								xSemaphoreGive(semaphore_loop);
 							}
@@ -176,6 +176,8 @@ void task_management_conection_server_mqtt(void *p_parameter)
 								HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_RESET);
 								down_conection=DOWN_CLOSE_BROKE_MQTT;
 								flag=0;
+								off_modem();
+								bg96_config.status_modem=OFF;
 								xSemaphoreGive(semaphore_loop);
 							}
 							else {
@@ -186,6 +188,8 @@ void task_management_conection_server_mqtt(void *p_parameter)
 							down_conection=DOWN_CLOSE_BROKE_MQTT;
 							HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_RESET);
 							flag=0;
+							off_modem();
+							bg96_config.status_modem=OFF;
 							xSemaphoreGive(semaphore_loop);
 							break;
 						default:
