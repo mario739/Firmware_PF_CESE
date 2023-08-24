@@ -15,7 +15,6 @@
 #include "callback_functions.h"
 #include "adc.h"
 
-
 typedef enum
 {
 	ADQUISITION
@@ -28,6 +27,8 @@ struct st_data_sensors{
 	uint16_t radiacion;
 	uint16_t soil_moisture_1;
 	uint16_t soil_moisture_2;
+	float  latitude;
+	float  longitude;
 };
 
 typedef struct

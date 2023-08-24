@@ -16,6 +16,26 @@
 #include "adc.h"
 #include "task_data_acquisition.h"
 #include "driver_bg96.h"
+
+typedef enum
+{
+	UP_SET_PARAMETER_CONTEXT_TCP,
+	UP_ACTIVATE_CONTEXT_PDP,
+	UP_OPEN_CLIENT_MQTT,
+	UP_CONNECT_BROKER_MQTT,
+	UP_ERROR_CONECTION,
+	RESET_MODEM,
+	STATUS,
+}en_up_conection;
+
+typedef enum
+{
+	DOWN_CLOSE_BROKE_MQTT,
+	DOWN_DISCONNECT_BROKER_MQTT,
+	DOWN_DESACTIVATE_MQTT,
+	DOWN_ERROR_CONECTION,
+}en_down_conection;
+
 typedef enum
 {
 	UP_CONECTION,
@@ -40,4 +60,5 @@ em_bg96_error_handling write_data(const char *command, const char *request, char
 void reset_modem(void);
 void on_modem(void);
 void off_modem(void);
+
 #endif /* INC_TASK_MANAGEMENT_CONECTION_SERVER_MQTT_H_ */

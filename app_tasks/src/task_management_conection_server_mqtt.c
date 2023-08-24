@@ -13,26 +13,6 @@ extern UART_HandleTypeDef huart2;
 extern xQueueHandle queue_data;
 extern st_bg96_config bg96_config;
 
-typedef enum
-{
-	UP_SET_PARAMETER_CONTEXT_TCP,
-	UP_ACTIVATE_CONTEXT_PDP,
-	UP_OPEN_CLIENT_MQTT,
-	UP_CONNECT_BROKER_MQTT,
-	UP_ERROR_CONECTION,
-	RESET_MODEM,
-	STATUS,
-}en_up_conection;
-
-typedef enum
-{
-	DOWN_CLOSE_BROKE_MQTT,
-	DOWN_DISCONNECT_BROKER_MQTT,
-	DOWN_DESACTIVATE_MQTT,
-	DOWN_ERROR_CONECTION,
-}en_down_conection;
-
-
 void reset_modem(void)
 {
 	off_modem();
@@ -62,10 +42,8 @@ void task_management_conection_server_mqtt(void *p_parameter)
 	st_event_conection p_event_conection;
 	en_down_conection down_conection=DOWN_CLOSE_BROKE_MQTT;
 	en_up_conection up_conection=RESET_MODEM;
-	struct st_data_sensors data_sensors2;
-	//struct st_config_mqtt_server config_mqtt_server={.topic="/v1.6/devices/monitoreo_iot"};
+	struct st_data_sensors data_sensor;
 	struct st_config_mqtt_server config_mqtt_server={.topic="v1/devices/me/telemetry"};
-	//struct st_config_mqtt_server config_mqtt_server={.topic="testmario/topic1"};
 	char data[200];
 	uint8_t flag=1;
 	uint8_t cont_status=0;
@@ -198,11 +176,9 @@ void task_management_conection_server_mqtt(void *p_parameter)
 
 					break;
 				case SEND_DATA_MQTT:
-						xQueueReceive(queue_data,&data_sensors2,portMAX_DELAY);
-						//sprintf(data,"{\"bateria\":%u,\"humedad_suelo\":%u,\"humedad_suelo2\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperatura_ambiente\":%u,\"position\":{\"latitude\":-21.537892, \"longitude\":-64.747228}}",data_sensors2.batery,
-						//data_sensors2.soil_moisture_1,data_sensors2.soil_moisture_2,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
-						sprintf(data,"{\"humedad_suelo\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperature_ambiente\":%u,\"position\":{\"latitude\":-21.537892, \"longitude\":-64.747228}}",
-						data_sensors2.soil_moisture_1,data_sensors2.ambient_humidity,data_sensors2.radiacion,data_sensors2.ambient_temperature);
+						xQueueReceive(queue_data,&data_sensor,portMAX_DELAY);
+						sprintf(data,"{\"humedad_suelo\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperature_ambiente\":%u,\"position\":{\"latitude\":%f, \"longitude\":%f}}",
+						data_sensor.soil_moisture_1,data_sensor.ambient_humidity,data_sensor.radiacion,data_sensor.ambient_temperature,data_sensor.latitude,data_sensor.longitude);
 						send_data_mqtt(&bg96_config,config_mqtt_server.topic,data);
 						flag=0;
 						xSemaphoreGive(semaphore_loop);
@@ -215,11 +191,11 @@ void task_management_conection_server_mqtt(void *p_parameter)
 	}
 }
 
+
 em_bg96_error_handling write_data(const char *command, const char *request, char *buffer, uint32_t time)
 {
 	char* res;
 	uint32_t i;
-	const TickType_t xDelay = 1/ portTICK_PERIOD_MS;
 
 	HAL_UART_Transmit(&huart2, (const uint8_t*)command, strlen(command),50);
 	HAL_UART_Transmit(&huart1, (const uint8_t*)command, strlen(command),50);

@@ -21,7 +21,7 @@ static const char CMD_BG96_MODE_RESPONSE_LONG[]="ATV1\r";
 static const char CMD_BG96_MODE_RESPONSE_SHORT[]="ATV0\r";
 
 #define THINGS_BOARD
-#define ENTEL
+#define TIGO
 em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_data_device,pf_reset_modem ft_reset_modem)
 {
     if (ft_send_data_device!=NULL) {
