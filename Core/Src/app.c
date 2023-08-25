@@ -59,7 +59,7 @@ static void task_loop(void *p_parameter)
 			xQueueSend(queue_server_mqtt,&event_conection,portMAX_DELAY);
 			xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		}
-		event_alarms.event_alarms=MONITOR;
+		event_alarms.event_alarms=SEND;
 		xQueueSend(queue_alarms,&event_alarms,portMAX_DELAY);
 		xSemaphoreTake(semaphore_loop,portMAX_DELAY);
 		event_conection.event_conection=DOWN_CONECTION,
