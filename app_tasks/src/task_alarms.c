@@ -17,13 +17,15 @@ void task_alarms(void *p_parameter)
 {
 	st_event_alarms event_alarms;
 	uint8_t alarms=0;
+	char numero[9]="72950576";
+	char mensaje[25]="Humedad de suelo muy baja";
 	while(1)
 	{
 		xQueueReceive(queue_alarms,&event_alarms,portMAX_DELAY);
 		switch (event_alarms.event_alarms)
 		{
 			case MONITOR:
-				if (event_alarms.sensors_data.soil_moisture_1 < 5)
+				if (event_alarms.sensors_data.soil_moisture_1 <= 5)
 				{
 					alarms=1;
 				}
@@ -31,7 +33,7 @@ void task_alarms(void *p_parameter)
 			case SEND:
 				if (alarms==1) {
 					set_sms_format(&bg96_config,1);
-					send_sms_bg96(&bg96_config,"72950576","Humedad de suelo muy baja");
+					send_sms_bg96(&bg96_config,numero,mensaje);
 					alarms=0;
 				}
 					xSemaphoreGive(semaphore_loop);

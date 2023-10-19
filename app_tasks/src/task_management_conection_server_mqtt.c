@@ -25,7 +25,7 @@ void on_modem(void)
 	vTaskDelay(700);
 	HAL_GPIO_WritePin(GPIOA,output_reset_Pin, GPIO_PIN_RESET);
 	vTaskDelay(4500);
-	vTaskDelay(70000);
+	vTaskDelay(20000);
 }
 
 void off_modem(void)
@@ -59,14 +59,12 @@ void task_management_conection_server_mqtt(void *p_parameter)
 						case RESET_MODEM:
 							if (bg96_config.status_modem==OFF) {
 								on_modem();
-								up_conection=STATUS;
-								bg96_config.status_modem=ON;
 							}
-							else {
+							else if(bg96_config.status_modem==ON) {
 								reset_modem();
-								bg96_config.status_modem=ON;
-								up_conection=STATUS;
 							}
+								up_conection=STATUS;
+								bg96_config.status_modem=ON;
 							break;
 						case STATUS:
 							if (get_status_modem(&bg96_config)==FT_BG96_OK) {
@@ -82,7 +80,6 @@ void task_management_conection_server_mqtt(void *p_parameter)
 								{
 									cont_status++;
 								}
-
 							}
 							break;
 						case UP_SET_PARAMETER_CONTEXT_TCP:
@@ -173,24 +170,21 @@ void task_management_conection_server_mqtt(void *p_parameter)
 						default:
 							break;
 					}
-
 					break;
 				case SEND_DATA_MQTT:
 						xQueueReceive(queue_data,&data_sensor,portMAX_DELAY);
 						sprintf(data,"{\"humedad_suelo\":%u,\"humedad_ambiente\":%u,\"radiacion\":%u,\"temperature_ambiente\":%u,\"position\":{\"latitude\":%f, \"longitude\":%f}}",
 						data_sensor.soil_moisture_1,data_sensor.ambient_humidity,data_sensor.radiacion,data_sensor.ambient_temperature,data_sensor.latitude,data_sensor.longitude);
-						send_data_mqtt(&bg96_config,config_mqtt_server.topic,data);
+						publish_message(&bg96_config, config_mqtt_server.topic, data);
 						flag=0;
 						xSemaphoreGive(semaphore_loop);
 					break;
 				default:
 					break;
 			}
-
 		}
 	}
 }
-
 
 em_bg96_error_handling write_data(const char *command, const char *request, char *buffer, uint32_t time)
 {

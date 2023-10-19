@@ -196,7 +196,7 @@ em_bg96_error_handling set_sms_format(st_bg96_config *self,uint8_t mode)
 em_bg96_error_handling send_sms_bg96(st_bg96_config *self,char*number,char*message)
 {
     self->ft_resp=FT_BG96_OK;
-    char buffer_message[256];
+    char buffer_message[20];
     char buffer_number[20];
     sprintf(buffer_number,"AT+CMGS=\"%s\"\r",number);
     sprintf(buffer_message,"%s\x1a\r",message);

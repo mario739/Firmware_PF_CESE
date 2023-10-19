@@ -87,9 +87,9 @@ int app(void)
 	res = xTaskCreate(task_alarms, (const char*)"task_alarms", configMINIMAL_STACK_SIZE , NULL,tskIDLE_PRIORITY + 1, NULL);
 	configASSERT(res == pdPASS);
 
-	queue_data_adquisition=xQueueCreate(1,sizeof(st_event_data_adquisition));
+	queue_data_adquisition=xQueueCreate(2,sizeof(st_event_data_adquisition));
 	queue_server_mqtt=xQueueCreate(3,sizeof(st_event_conection));
-	queue_data=xQueueCreate(1,sizeof(struct st_data_sensors));
+	queue_data=xQueueCreate(2,sizeof(struct st_data_sensors));
 	queue_alarms=xQueueCreate(2,sizeof(st_event_alarms));
 
 	semaphore_loop=xSemaphoreCreateBinary();
