@@ -21,10 +21,11 @@ typedef enum
 
 typedef struct
 {
+	char *type_alarms;
+	st_data_sensors sensors_data;
 	en_event_alarms event_alarms;
-	struct st_data_sensors sensors_data;
 
-}st_event_alarms;
+}st_config_alarms;
 
 
 void task_alarms(void *p_parameter);

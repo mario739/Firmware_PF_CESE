@@ -3,7 +3,7 @@
 #include <task_management_conection_server_mqtt.h>
 
 volatile uint8_t  rx_tem;
-volatile uint8_t rx_buffer[300];
+volatile uint8_t  rx_buffer[300];
 volatile uint16_t rx_index=0;
 
 extern xQueueHandle queue_server_mqtt;
@@ -40,13 +40,12 @@ void off_modem(void)
 void task_management_conection_server_mqtt(void *p_parameter)
 {
 	st_event_conection p_event_conection;
-	en_down_conection down_conection=DOWN_CLOSE_BROKE_MQTT;
-	en_up_conection up_conection=RESET_MODEM;
-	struct st_data_sensors data_sensor;
-	struct st_config_mqtt_server config_mqtt_server={.topic="v1/devices/me/telemetry"};
+	st_data_sensors data_sensor;
+	st_config_mqtt_server config_mqtt_server={.topic="v1/devices/me/telemetry",.down_conection=DOWN_CLOSE_BROKE_MQTT,.up_conection=RESET_MODEM};
 	char data[200];
 	uint8_t flag=1;
 	uint8_t cont_status=0;
+
 	while(1)
 	{
 		xQueueReceive(queue_server_mqtt,&p_event_conection,portMAX_DELAY);
@@ -55,25 +54,41 @@ void task_management_conection_server_mqtt(void *p_parameter)
 		{
 			switch(p_event_conection.event_conection){
 				case UP_CONECTION:
-					switch (up_conection) {
+					switch (config_mqtt_server.up_conection) {
 						case RESET_MODEM:
-							if (bg96_config.status_modem==OFF) {
-								on_modem();
+							if (bg96_config.status_modem==OFF)
+							{
+								if (get_status_modem(&bg96_config)==FT_BG96_OK)
+								{
+									reset_modem();
+									config_mqtt_server.up_conection=STATUS;
+									cont_status=0;
+								}
+								else {
+									if (cont_status==2) {
+										on_modem();
+										config_mqtt_server.up_conection=STATUS;
+										cont_status=0;
+									}
+									else {
+										cont_status++;
+									}
+								}
 							}
 							else if(bg96_config.status_modem==ON) {
 								reset_modem();
-							}
-								up_conection=STATUS;
+						     	config_mqtt_server.up_conection=STATUS;
 								bg96_config.status_modem=ON;
+							}
 							break;
 						case STATUS:
 							if (get_status_modem(&bg96_config)==FT_BG96_OK) {
-								up_conection=UP_SET_PARAMETER_CONTEXT_TCP;
+								config_mqtt_server.up_conection=UP_SET_PARAMETER_CONTEXT_TCP;
 								cont_status=0;
 							}
 							else {
-								if (cont_status==1) {
-									up_conection=UP_ERROR_CONECTION;
+								if (cont_status==2) {
+									config_mqtt_server.up_conection=UP_ERROR_CONECTION;
 									cont_status=0;
 								}
 								else
@@ -84,42 +99,42 @@ void task_management_conection_server_mqtt(void *p_parameter)
 							break;
 						case UP_SET_PARAMETER_CONTEXT_TCP:
 							if (set_parameter_context_tcp(&bg96_config)==FT_BG96_OK) {
-								up_conection=UP_ACTIVATE_CONTEXT_PDP;
+								config_mqtt_server.up_conection=UP_ACTIVATE_CONTEXT_PDP;
 							}
 							else {
-								up_conection=UP_ERROR_CONECTION;
+								config_mqtt_server.up_conection=UP_ERROR_CONECTION;
 							}
 							break;
 						case UP_ACTIVATE_CONTEXT_PDP:
 							if (activate_context_pdp(&bg96_config)==FT_BG96_OK) {
-								up_conection=UP_OPEN_CLIENT_MQTT;
+								config_mqtt_server.up_conection=UP_OPEN_CLIENT_MQTT;
 							}
 							else {
-								up_conection=UP_ERROR_CONECTION;
+								config_mqtt_server.up_conection=UP_ERROR_CONECTION;
 							}
 							break;
 						case UP_OPEN_CLIENT_MQTT:
 							if (open_client_mqtt(&bg96_config)==FT_BG96_OK) {
-								up_conection=UP_CONNECT_BROKER_MQTT;
+								config_mqtt_server.up_conection=UP_CONNECT_BROKER_MQTT;
 							}
 							else{
-								up_conection=UP_ERROR_CONECTION;
+								config_mqtt_server.up_conection=UP_ERROR_CONECTION;
 							}
 							break;
 						case UP_CONNECT_BROKER_MQTT:
 							if (connect_server_mqtt(&bg96_config)==FT_BG96_OK) {
 								bg96_config.status_mqtt_server=SERVER_MQTT_UP;
 								HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_SET);
-								up_conection=RESET_MODEM;
+								config_mqtt_server.up_conection=RESET_MODEM;
 								flag=0;
 								xSemaphoreGive(semaphore_loop);
 							}
 							else{
-								up_conection=UP_ERROR_CONECTION;
+								config_mqtt_server.up_conection=UP_ERROR_CONECTION;
 							}
 							break;
 						case UP_ERROR_CONECTION:
-							up_conection=RESET_MODEM;
+							config_mqtt_server.up_conection=RESET_MODEM;
 							flag=0;
 							xSemaphoreGive(semaphore_loop);
 							break;
@@ -128,39 +143,39 @@ void task_management_conection_server_mqtt(void *p_parameter)
 					}
 					break;
 				case DOWN_CONECTION:
-					switch (down_conection) {
+					switch (config_mqtt_server.down_conection) {
 						case DOWN_CLOSE_BROKE_MQTT:
 							if (close_client_mqtt(&bg96_config)==FT_BG96_OK) {
-								down_conection=DOWN_DISCONNECT_BROKER_MQTT;
+								config_mqtt_server.down_conection=DOWN_DISCONNECT_BROKER_MQTT;
 							}
 							else{
-								down_conection=DOWN_DESACTIVATE_MQTT;
+								config_mqtt_server.down_conection=DOWN_DESACTIVATE_MQTT;
 							}
 							break;
 						case DOWN_DISCONNECT_BROKER_MQTT:
 							if (disconnect_server_mqtt(&bg96_config)==FT_BG96_OK) {
-								down_conection=DOWN_DESACTIVATE_MQTT;
+								config_mqtt_server.down_conection=DOWN_DESACTIVATE_MQTT;
 							}
 							else{
-								down_conection=DOWN_ERROR_CONECTION;
+								config_mqtt_server.down_conection=DOWN_ERROR_CONECTION;
 							}
 							break;
 						case DOWN_DESACTIVATE_MQTT:
 							if (desactivate_context_pdp(&bg96_config)==FT_BG96_OK) {
 								bg96_config.status_mqtt_server=SERVER_MQTT_DOWN;
 								HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_RESET);
-								down_conection=DOWN_CLOSE_BROKE_MQTT;
+								config_mqtt_server.down_conection=DOWN_CLOSE_BROKE_MQTT;
 								flag=0;
 								off_modem();
 								bg96_config.status_modem=OFF;
 								xSemaphoreGive(semaphore_loop);
 							}
 							else {
-								down_conection=DOWN_ERROR_CONECTION;
+								config_mqtt_server.down_conection=DOWN_ERROR_CONECTION;
 							}
 							break;
 						case DOWN_ERROR_CONECTION:
-							down_conection=DOWN_CLOSE_BROKE_MQTT;
+							config_mqtt_server.down_conection=DOWN_CLOSE_BROKE_MQTT;
 							HAL_GPIO_WritePin(output_signal_GPIO_Port,output_signal_Pin, GPIO_PIN_RESET);
 							flag=0;
 							off_modem();

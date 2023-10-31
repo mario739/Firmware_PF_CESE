@@ -22,13 +22,10 @@ static const char CMD_BG96_MODE_RESPONSE_SHORT[]="ATV0\r";
 
 #define THINGS_BOARD
 #define TIGO
-em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_data_device,pf_reset_modem ft_reset_modem)
+em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_data_device)
 {
     if (ft_send_data_device!=NULL) {
     	self->send_data_device=ft_send_data_device;
-	}
-    if (ft_reset_modem!=NULL) {
-        self->f_reset_modem=ft_reset_modem;
 	}
     self->status_modem=OFF;
     self->ft_resp=FT_BG96_OK;
@@ -334,7 +331,7 @@ em_bg96_error_handling publish_message(st_bg96_config *self,char *topic,char *da
 {
     self->ft_resp=FT_BG96_ERROR;
     char cmd[50]={0};
-    char buffer_data[220]={0};
+    char buffer_data[200]={0};
     sprintf(buffer_data,"%s\x1a\r",data);
     sprintf(cmd,"AT+QMTPUB=%u,0,0,0,\"%s\"\r",self->self_mqtt.identifier_socket_mqtt,topic);
     self->ft_resp=self->send_data_device(cmd,RS_BG96_SIGNAL,self->buffer_resp,3000);
@@ -361,35 +358,4 @@ em_bg96_error_handling turn_off_bg96(st_bg96_config *self)
     }
     return self->ft_resp;
 
-}
-
-em_bg96_error_handling send_data_mqtt(st_bg96_config *self,char *topic,char *data)
-{
-    self->ft_resp=FT_BG96_OK;
-    em_states_send_data states_send_data_mqtt=PUB_MQTT;
-    uint8_t flag_machine=1;
-    while (flag_machine==1)
-    {
-        switch (states_send_data_mqtt)
-        {
-        	case PUB_MQTT:
-				if (publish_message(self,topic,data)==FT_BG96_OK)
-				{
-					flag_machine=0;
-				}
-				else
-				{
-					states_send_data_mqtt=ERROR1;
-				}
-			break;
-        case ERROR1:
-        	flag_machine=0;
-            self->ft_resp=FT_BG96_ERROR;
-            break;
-        default:
-            flag_machine=0;
-            break;
-        }   
-    }
-    return self->ft_resp;   
 }

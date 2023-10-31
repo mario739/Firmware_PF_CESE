@@ -36,6 +36,7 @@ typedef enum
 	DOWN_ERROR_CONECTION,
 }en_down_conection;
 
+
 typedef enum
 {
 	UP_CONECTION,
@@ -49,10 +50,14 @@ typedef struct
 
 }st_event_conection;
 
-struct st_config_mqtt_server
+typedef struct
 {
 	char topic[30];
-};
+	en_event_conection event_conection;
+	en_up_conection  up_conection ;
+	en_down_conection down_conection;
+
+}st_config_mqtt_server;
 
 void task_raise_server(void *p_parameter);
 void task_management_conection_server_mqtt(void *p_parameter);

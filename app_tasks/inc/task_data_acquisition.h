@@ -20,7 +20,7 @@ typedef enum
 	ADQUISITION
 }en_states_data_adquisition;
 
-struct st_data_sensors{
+typedef struct {
 	uint8_t ambient_humidity;
 	int8_t ambient_temperature;
 	uint16_t batery;
@@ -29,7 +29,7 @@ struct st_data_sensors{
 	uint16_t soil_moisture_2;
 	float  latitude;
 	float  longitude;
-};
+}st_data_sensors;
 
 typedef struct
 {

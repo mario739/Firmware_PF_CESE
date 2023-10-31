@@ -108,7 +108,7 @@ typedef struct
 
 
 
-em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_data_device, pf_reset_modem ft_reset_modem);
+em_bg96_error_handling init_driver(st_bg96_config *self,pf_send_data ft_send_data_device);
 em_bg96_error_handling turn_off_bg96(st_bg96_config *self);
 
 em_bg96_error_handling get_status_modem(st_bg96_config *self);
